@@ -1,0 +1,21 @@
+# Add to your .gitlab-ci.yml, then create a Pipeline Schedule
+# (CI/CD > Schedules) with cron "0 8 * * 1" (Mondays 08:00) and variable
+# RUN_WEEKLY_DIGEST=true.
+#
+# Required CI/CD variables (masked): ANTHROPIC_API_KEY, GITLAB_TOKEN (read_api),
+# optional DIGEST_WEBHOOK_URL.
+
+weekly-digest:
+  stage: .post
+  image: node:lts
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $RUN_WEEKLY_DIGEST == "true"'
+  before_script:
+    - npm install -g @anthropic-ai/claude-code
+    - curl -fsSL https://gitlab.com/gitlab-org/cli/-/releases/permalink/latest/downloads/glab_linux_amd64.tar.gz | tar -xz -C /usr/local --strip-components=0
+    - export GITLAB_TOKEN
+  script:
+    - bash templates/agents/weekly-digest/run-digest.sh
+  artifacts:
+    paths: [digest.md]
+    expire_in: 30 days
